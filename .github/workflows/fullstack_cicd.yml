@@ -1,0 +1,49 @@
+on:
+    push:
+        branches: [main]
+    pull_request:     
+        branches: [main]
+env:
+    IMAGE_NAME: ${{secrets.DOCKER_USER_NAME}}/fullstack_8jun
+jobs:
+    test:
+      name: run the test
+      runs-on: ubuntu-latest
+      steps:
+        -  name: take code
+           uses: actions/checkout@v2
+        -  name: node setup
+           uses: actions/setup-node@v2
+           with:
+            node-version: "20"
+        -  name: depensiec install
+           run: npm i
+        -  name: run the test
+           run: node test.js
+    
+    docker:
+        name: dokcer image build and push on docker hub
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            -  name: code lao
+               uses: actions/checkout@v2
+            -  name: login karo
+               uses: docker/login-action@v2
+               with:
+                  username: ${{secrets.DOCKER_USER_NAME}} 
+                  password: ${{secrets.DOCKER_PASSWORD}} 
+            -  name: build and push 
+               uses: docker/build-push-action@v3
+               with:
+                  context: .
+                  push: true
+                  tags: |
+                    ${{env.IMAGE_NAME}}:latest
+                    ${{env.IMAGE_NAME}}:${{github.sha}}
+
+
+            - name: verifying
+              run: |
+                echo "image push done"  
+                echo "image name : ${{env.IMAGE_NAME}}"  

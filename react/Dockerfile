@@ -1,7 +1,13 @@
-FROM node:20-alpine
+# multil stage
+FROM node:20-alpine AS builder
 WORKDIR /app
-COPY packge*.json .
-RUN npm i
+COPY package*.json ./
+RUN npm ci
 COPY . .
-EXPOSE 5173
-CMD [ "npm","run" ,"dev"  ]
+RUN npm run build
+
+# final stage
+FROM nginx:alpine
+COPY --from=builder /app/dist  /usr/share/nginx/html 
+EXPOSE 80
+CMD [ "nginx" ,"-g" ,"daemon off;" ]
